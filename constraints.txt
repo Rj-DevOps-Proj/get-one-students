@@ -1,0 +1,5 @@
+# Pinned dependency set to satisfy Trivy and keep CI consistent.
+Flask==3.1.3
+requests==2.33.0
+msgpack==1.2.2
+setuptools==78.1.1
