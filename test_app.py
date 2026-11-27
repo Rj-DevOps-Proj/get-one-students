@@ -35,15 +35,35 @@ def client():
             )
 
 
-def test_student_crud(client):
-    listed = client.get("/students")
-    assert listed.status_code == 200
-    assert len(listed.get_json()) == 1
+def test_student_can_be_retrieved(client):
+    connection = psycopg.connect(client.application.config["DATABASE_URL"])
+    try:
+        cursor = connection.execute(
+            """
+            INSERT INTO students (name, email, grade)
+            VALUES (%s, %s, %s)
+            RETURNING id
+            """,
+            ("Amina Yusuf", "amina@example.com", 8),
+        )
+        student_id = cursor.fetchone()[0]
+        connection.commit()
+    finally:
+        connection.close()
+
+    response = client.get(f"/students/{student_id}")
+    assert response.status_code == 200
+    assert response.get_json() == {
+        "id": student_id,
+        "name": "Amina Yusuf",
+        "email": "amina@example.com",
+        "grade": 8,
+    }
 
 
-def test_invalid_student_is_rejected(client):
-    response = client.post("/students", json={"name": "Incomplete"})
-    assert response.status_code == 400
+def test_missing_student_returns_not_found(client):
+    response = client.get("/students/999999")
+    assert response.status_code == 404
 
 
 def test_service_health(client):
